@@ -1,6 +1,14 @@
 from enum import Enum
 
 
+class YamlFilterNameGenerationMode(Enum):
+    """Controls how filter names are generated during YAML serialization."""
+
+    SUPPRESS = 'suppress'
+    GENERATE_MISSING = 'missing'
+    REGENERATE_ALL = 'regenerate'
+
+
 class XmlField(str, Enum):
     # Metadata fields
     METADATA_TITLE = 'title'

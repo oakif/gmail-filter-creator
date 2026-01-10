@@ -16,6 +16,7 @@ from .models import (
     GmailFilterCollection,
     Metadata,
 )
+from .name_generator import generate_filter_name
 
 
 APPS_NAMESPACE = 'http://schemas.google.com/apps/2006'
@@ -24,6 +25,7 @@ APPS_NAMESPACE = 'http://schemas.google.com/apps/2006'
 def parse_xml_to_filters(
     xml_path: str | Path,
     strip_fields: set[OptionalField] | None = None,
+    generate_names: bool = True,
 ) -> GmailFilterCollection:
     tree = ET.parse(xml_path)
     root = tree.getroot()
@@ -65,7 +67,7 @@ def parse_xml_to_filters(
 
     filters = []
     for entry in root.findall('atom:entry', namespaces):
-        filter_obj = _parse_filter_entry(entry, namespaces, xml_fields_to_strip)
+        filter_obj = _parse_filter_entry(entry, namespaces, xml_fields_to_strip, generate_names)
         filters.append(filter_obj)
 
     return GmailFilterCollection(metadata=metadata, filters=filters)
@@ -99,6 +101,7 @@ def _parse_filter_entry(
     entry: ET.Element,
     namespaces: dict,
     xml_fields_to_strip: set[XmlField],
+    generate_names: bool,
 ) -> Filter:
     filter_id = None
     if XmlField.FILTER_ID not in xml_fields_to_strip:
@@ -118,11 +121,16 @@ def _parse_filter_entry(
     criteria = _extract_criteria(properties)
     actions = _extract_actions(properties)
 
+    name = None
+    if generate_names:
+        name = generate_filter_name(criteria, actions)
+
     return Filter(
         id=filter_id,
         updated_time=updated_time,
         criteria=criteria,
         actions=actions,
+        name=name,
     )
 
 
