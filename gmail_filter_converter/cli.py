@@ -7,6 +7,7 @@ from pathlib import Path
 from .fields import (
     UNNECESSARY_METADATA,
     OptionalField,
+    YamlFilterNameGenerationMode,
 )
 from .xml_parser import parse_xml_to_filters
 from .yaml_serializer import serialize_filters_to_yaml
@@ -32,6 +33,11 @@ def main() -> None:
         action='store_true',
         help='Do not generate filter names in YAML output',
     )
+    parser.add_argument(
+        '--regenerate-names',
+        action='store_true',
+        help='Regenerate filter names in YAML output even if they already exist',
+    )
 
     args = parser.parse_args()
 
@@ -52,17 +58,25 @@ def main() -> None:
             print(f'Error: Invalid field name {e}', file=sys.stderr)
             sys.exit(1)
 
+    # Determine name mode for serializer
     if args.no_names:
-        strip_fields.add(OptionalField.FILTER_NAME)
+        name_mode = YamlFilterNameGenerationMode.SUPPRESS
+    elif args.regenerate_names:
+        name_mode = YamlFilterNameGenerationMode.REGENERATE_ALL
+    else:
+        name_mode = YamlFilterNameGenerationMode.GENERATE_MISSING
+
+    # Control parser name generation - don't generate if we'll suppress them
+    generate_names = name_mode != YamlFilterNameGenerationMode.SUPPRESS
 
     strip_fields = strip_fields if strip_fields else None
 
     try:
         print(f'Parsing {input_path}...')
-        filter_collection = parse_xml_to_filters(input_path, strip_fields)
+        filter_collection = parse_xml_to_filters(input_path, strip_fields, generate_names)
 
         print(f'Converting to YAML and writing to {output_path}...')
-        serialize_filters_to_yaml(filter_collection, output_path, strip_fields)
+        serialize_filters_to_yaml(filter_collection, output_path, strip_fields, name_mode)
 
         print(f'Success! Converted {len(filter_collection.filters)} filters.')
     except Exception as e:
