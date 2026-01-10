@@ -7,17 +7,43 @@ import yaml
 from .models import FilterActions, FilterCriteria, GmailFilterCollection
 
 
+class _LiteralBlockString(str):
+    """Mark strings to be rendered with literal block style (|) in YAML.
+
+    This produces cleaner YAML output for strings with quotes and special chars.
+    Instead of escaped backslashes like \"...\", we get readable multi-line text.
+    """
+    pass
+
+
+def _literal_string_representer(dumper: yaml.Dumper, data: _LiteralBlockString) -> yaml.Node:
+    """Tell PyYAML to use literal block style (|) for our marked strings.
+
+    Literal block style preserves newlines and quotes without escaping.
+    So instead of: has_the_word: "\"Thank you...\""
+    We get:       has_the_word: |
+                    "Thank you..."
+    """
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+
+
+yaml.add_representer(_LiteralBlockString, _literal_string_representer)
+
+
 def serialize_filters_to_yaml(
     filter_collection: GmailFilterCollection,
     output_path: str | Path,
 ) -> None:
     data = _convert_to_dict(filter_collection)
-    yaml.dump(
-        data,
-        open(output_path, 'w'),
-        default_flow_style=False,
-        sort_keys=False,
-    )
+
+    with open(output_path, 'w') as f:
+        yaml.dump(
+            data,
+            f,
+            default_flow_style=False,
+            sort_keys=False,
+            allow_unicode=True,
+        )
 
 
 def _convert_to_dict(filter_collection: GmailFilterCollection) -> dict:
@@ -61,7 +87,7 @@ def _filter_criteria_to_dict(criteria: FilterCriteria) -> dict:
     if criteria.subject is not None:
         result['subject'] = criteria.subject
     if criteria.has_the_word is not None:
-        result['has_the_word'] = criteria.has_the_word
+        result['has_the_word'] = _LiteralBlockString(criteria.has_the_word)
     return result
 
 
