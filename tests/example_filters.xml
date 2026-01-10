@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
+	<title>Mail Filters</title>
+	<id>tag:mail.google.com,2008:filters:1735648168304,1739016067676,1739631319091</id>
+	<updated>2026-01-10T01:25:43Z</updated>
+	<author>
+		<name>Test User</name>
+		<email>user@example.com</email>
+	</author>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1735648168304</id>
+		<updated>2026-01-10T01:25:43Z</updated>
+		<content></content>
+		<apps:property name='from' value='transactional@mail.burgerking.com'/>
+		<apps:property name='subject' value='Your Burger King Receipt'/>
+		<apps:property name='hasTheWord' value='Thanks for ordering from Burger King'/>
+		<apps:property name='label' value='Receipts/Burger King'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1739016067676</id>
+		<updated>2026-01-10T01:25:43Z</updated>
+		<content></content>
+		<apps:property name='from' value='auto-confirm@amazon.com'/>
+		<apps:property name='subject' value='&quot;Your Amazon.com order&quot;'/>
+		<apps:property name='hasTheWord' value='&quot;Thank you for shopping with us. We’ll send a confirmation when your item ships.&quot;'/>
+		<apps:property name='label' value='Shopping/Amazon'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1739631319091</id>
+		<updated>2026-01-10T01:25:43Z</updated>
+		<content></content>
+		<apps:property name='from' value='venmo@venmo.com'/>
+		<apps:property name='subject' value='&quot;paid your&quot; &quot;request&quot;'/>
+		<apps:property name='hasTheWord' value='&quot;Money credited to your Venmo account&quot;'/>
+		<apps:property name='label' value='Payments/Venmo'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+</feed>
