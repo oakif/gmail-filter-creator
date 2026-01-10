@@ -24,6 +24,7 @@ def test_optional_field_enum_values():
         'METADATA_ID',
         'METADATA_UPDATED_TIME',
         'METADATA_AUTHOR',
+        'FILTER_NAME',
         'FILTER_ID',
         'FILTER_UPDATED_TIME',
     }
@@ -56,7 +57,9 @@ def test_xml_to_yaml_mapping_exists():
 def test_optional_field_to_xml_mapping_completeness():
     for opt_field in OptionalField:
         assert opt_field in OPTIONAL_FIELD_TO_XML
-        assert len(OPTIONAL_FIELD_TO_XML[opt_field]) > 0
+        # FILTER_NAME has no XML equivalent (YAML-only field)
+        if opt_field != OptionalField.FILTER_NAME:
+            assert len(OPTIONAL_FIELD_TO_XML[opt_field]) > 0
 
 
 def test_optional_field_to_yaml_mapping_completeness():
