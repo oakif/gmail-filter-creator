@@ -37,6 +37,7 @@ class YamlField(str, Enum):
     METADATA_AUTHOR_EMAIL = 'metadata.author.email'
 
     # Filter-level fields
+    FILTER_NAME = 'filters[].name'
     FILTER_ID = 'filters[].id'
     FILTER_UPDATED_TIME = 'filters[].updated_time'
 
@@ -69,6 +70,7 @@ class OptionalField(str, Enum):
     METADATA_AUTHOR = 'METADATA_AUTHOR'
 
     # Filter-level fields
+    FILTER_NAME = 'FILTER_NAME'
     FILTER_ID = 'FILTER_ID'
     FILTER_UPDATED_TIME = 'FILTER_UPDATED_TIME'
 
@@ -109,6 +111,7 @@ OPTIONAL_FIELD_TO_XML: dict[OptionalField, set[XmlField]] = {
         XmlField.METADATA_AUTHOR_NAME,
         XmlField.METADATA_AUTHOR_EMAIL,
     },
+    OptionalField.FILTER_NAME: set(),  # No XML equivalent - YAML only
     OptionalField.FILTER_ID: {XmlField.FILTER_ID},
     OptionalField.FILTER_UPDATED_TIME: {XmlField.FILTER_UPDATED},
 }
@@ -121,6 +124,7 @@ OPTIONAL_FIELD_TO_YAML: dict[OptionalField, set[YamlField]] = {
         YamlField.METADATA_AUTHOR_NAME,
         YamlField.METADATA_AUTHOR_EMAIL,
     },
+    OptionalField.FILTER_NAME: {YamlField.FILTER_NAME},
     OptionalField.FILTER_ID: {YamlField.FILTER_ID},
     OptionalField.FILTER_UPDATED_TIME: {YamlField.FILTER_UPDATED_TIME},
 }
