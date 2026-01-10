@@ -27,6 +27,11 @@ def main() -> None:
         '--strip-fields',
         help='Comma-separated list of optional fields to strip (e.g., FILTER_ID,METADATA_AUTHOR)',
     )
+    parser.add_argument(
+        '--no-names',
+        action='store_true',
+        help='Do not generate filter names in YAML output',
+    )
 
     args = parser.parse_args()
 
@@ -37,15 +42,20 @@ def main() -> None:
         print(f'Error: Input file not found: {input_path}')
         sys.exit(1)
 
-    strip_fields = None
+    strip_fields = set()
     if args.strip_unnecessary_metadata:
-        strip_fields = UNNECESSARY_METADATA
+        strip_fields = set(UNNECESSARY_METADATA)
     elif args.strip_fields:
         try:
             strip_fields = {OptionalField[f.strip()] for f in args.strip_fields.split(',')}
         except KeyError as e:
             print(f'Error: Invalid field name {e}', file=sys.stderr)
             sys.exit(1)
+
+    if args.no_names:
+        strip_fields.add(OptionalField.FILTER_NAME)
+
+    strip_fields = strip_fields if strip_fields else None
 
     try:
         print(f'Parsing {input_path}...')
