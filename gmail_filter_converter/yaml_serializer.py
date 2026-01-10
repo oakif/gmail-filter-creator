@@ -9,7 +9,8 @@ from .fields import (
     YamlField,
     get_yaml_fields_to_strip,
 )
-from .models import FilterActions, FilterCriteria, GmailFilterCollection
+from .models import Filter, FilterActions, FilterCriteria, GmailFilterCollection
+from .name_generator import generate_filter_name
 
 
 class _LiteralBlockString(str):
@@ -92,8 +93,15 @@ def _convert_to_dict(
     }
 
 
-def _filter_to_dict(filter_obj, yaml_fields_to_strip: set[YamlField]) -> dict:
+def _filter_to_dict(filter_obj: Filter, yaml_fields_to_strip: set[YamlField]) -> dict:
     result = {}
+
+    # Name comes first
+    if YamlField.FILTER_NAME not in yaml_fields_to_strip:
+        if filter_obj.name:
+            result['name'] = filter_obj.name
+        else:
+            result['name'] = generate_filter_name(filter_obj.criteria, filter_obj.actions)
 
     if YamlField.FILTER_ID not in yaml_fields_to_strip and filter_obj.id:
         result['id'] = filter_obj.id
