@@ -7,6 +7,7 @@ import yaml
 from .fields import (
     OptionalField,
     YamlField,
+    YamlFilterNameGenerationMode,
     get_yaml_fields_to_strip,
 )
 from .models import Filter, FilterActions, FilterCriteria, GmailFilterCollection
@@ -44,8 +45,9 @@ def serialize_filters_to_yaml(
     filter_collection: GmailFilterCollection,
     output_path: str | Path,
     strip_fields: set[OptionalField] | None = None,
+    name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
 ) -> None:
-    data = _convert_to_dict(filter_collection, strip_fields)
+    data = _convert_to_dict(filter_collection, strip_fields, name_mode)
 
     with open(output_path, 'w') as f:
         yaml.dump(
@@ -61,6 +63,7 @@ def serialize_filters_to_yaml(
 def _convert_to_dict(
     filter_collection: GmailFilterCollection,
     strip_fields: set[OptionalField] | None = None,
+    name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
 ) -> dict:
     yaml_fields_to_strip = get_yaml_fields_to_strip(strip_fields) if strip_fields else set()
 
@@ -89,18 +92,27 @@ def _convert_to_dict(
 
     return {
         'metadata': metadata_dict,
-        'filters': [_filter_to_dict(f, yaml_fields_to_strip) for f in filter_collection.filters],
+        'filters': [_filter_to_dict(f, yaml_fields_to_strip, name_mode) for f in filter_collection.filters],
     }
 
 
-def _filter_to_dict(filter_obj: Filter, yaml_fields_to_strip: set[YamlField]) -> dict:
+def _filter_to_dict(
+    filter_obj: Filter,
+    yaml_fields_to_strip: set[YamlField],
+    name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
+) -> dict:
     result = {}
 
     # Name comes first
     if YamlField.FILTER_NAME not in yaml_fields_to_strip:
-        if filter_obj.name:
-            result['name'] = filter_obj.name
-        else:
+        if name_mode == YamlFilterNameGenerationMode.SUPPRESS:
+            pass
+        elif name_mode == YamlFilterNameGenerationMode.GENERATE_MISSING:
+            if filter_obj.name:
+                result['name'] = filter_obj.name
+            else:
+                result['name'] = generate_filter_name(filter_obj.criteria, filter_obj.actions)
+        elif name_mode == YamlFilterNameGenerationMode.REGENERATE_ALL:
             result['name'] = generate_filter_name(filter_obj.criteria, filter_obj.actions)
 
     if YamlField.FILTER_ID not in yaml_fields_to_strip and filter_obj.id:
