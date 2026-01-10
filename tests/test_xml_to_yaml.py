@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from gmail_filter_converter.fields import YamlFilterNameGenerationMode
 from gmail_filter_converter.xml_parser import parse_xml_to_filters
 from gmail_filter_converter.yaml_serializer import serialize_filters_to_yaml
 
@@ -147,3 +148,102 @@ def test_round_trip_xml_to_yaml_preserves_data(example_xml_path: Path, temp_yaml
     for yaml_filter, original_filter in zip(data['filters'], original.filters):
         assert yaml_filter['id'] == original_filter.id
         assert yaml_filter['updated_time'] == original_filter.updated_time
+
+
+def test_parse_generates_names_by_default(example_xml_path: Path) -> None:
+    """Test that parse_xml_to_filters generates names by default."""
+    collection = parse_xml_to_filters(example_xml_path)
+
+    for filter_obj in collection.filters:
+        assert filter_obj.name is not None
+        assert len(filter_obj.name) > 0
+
+
+def test_parse_with_generate_names_false(example_xml_path: Path) -> None:
+    """Test that parse_xml_to_filters doesn't generate names when disabled."""
+    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+
+    for filter_obj in collection.filters:
+        assert filter_obj.name is None
+
+
+def test_serialize_suppress_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
+    """Test that SUPPRESS mode doesn't include names in YAML output."""
+    collection = parse_xml_to_filters(example_xml_path)
+    serialize_filters_to_yaml(
+        collection,
+        temp_yaml_file,
+        name_mode=YamlFilterNameGenerationMode.SUPPRESS,
+    )
+
+    with open(temp_yaml_file) as f:
+        data = yaml.safe_load(f)
+
+    for filter_data in data['filters']:
+        assert 'name' not in filter_data
+
+
+def test_serialize_generate_missing_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
+    """Test that GENERATE_MISSING uses existing names and generates missing ones."""
+    collection = parse_xml_to_filters(example_xml_path)
+
+    # Manually override the name of the first filter
+    collection.filters[0].name = 'Custom Name'
+
+    serialize_filters_to_yaml(
+        collection,
+        temp_yaml_file,
+        name_mode=YamlFilterNameGenerationMode.GENERATE_MISSING,
+    )
+
+    with open(temp_yaml_file) as f:
+        data = yaml.safe_load(f)
+
+    # First filter should keep custom name
+    assert data['filters'][0]['name'] == 'Custom Name'
+
+    # Other filters should have generated names
+    for filter_data in data['filters'][1:]:
+        assert 'name' in filter_data
+        assert len(filter_data['name']) > 0
+
+
+def test_serialize_regenerate_all_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
+    """Test that REGENERATE_ALL overwrites existing names with generated ones."""
+    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+
+    # Manually set a name on the first filter
+    collection.filters[0].name = 'Custom Name'
+
+    serialize_filters_to_yaml(
+        collection,
+        temp_yaml_file,
+        name_mode=YamlFilterNameGenerationMode.REGENERATE_ALL,
+    )
+
+    with open(temp_yaml_file) as f:
+        data = yaml.safe_load(f)
+
+    # First filter should NOT have the custom name; it should be regenerated
+    assert data['filters'][0]['name'] != 'Custom Name'
+    assert len(data['filters'][0]['name']) > 0
+
+    # All filters should have names
+    for filter_data in data['filters']:
+        assert 'name' in filter_data
+        assert len(filter_data['name']) > 0
+
+
+def test_default_serializer_generates_names(example_xml_path: Path, temp_yaml_file: Path) -> None:
+    """Test that serialize_filters_to_yaml generates names by default (GENERATE_MISSING)."""
+    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+
+    # Now serialize with default mode (GENERATE_MISSING)
+    serialize_filters_to_yaml(collection, temp_yaml_file)
+
+    with open(temp_yaml_file) as f:
+        data = yaml.safe_load(f)
+
+    for filter_data in data['filters']:
+        assert 'name' in filter_data
+        assert len(filter_data['name']) > 0
