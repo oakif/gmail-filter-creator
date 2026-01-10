@@ -49,6 +49,7 @@ class FilterActions:
 
 @dataclass(kw_only=True)
 class Filter:
+    name: str | None = None
     criteria: FilterCriteria = field(default_factory=FilterCriteria)
     actions: FilterActions = field(default_factory=FilterActions)
     id: str | None = None
@@ -59,6 +60,12 @@ class Filter:
             Metadata._validate_iso8601(self.updated_time)
         if not self._has_any_property():
             raise ValueError('Filter must have at least one criteria or action property')
+
+    def get_name(self) -> str:
+        if self.name:
+            return self.name
+        from .name_generator import generate_filter_name
+        return generate_filter_name(self.criteria, self.actions)
 
     def _has_any_property(self) -> bool:
         return any(
