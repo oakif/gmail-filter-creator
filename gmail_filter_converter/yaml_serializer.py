@@ -4,6 +4,11 @@ from pathlib import Path
 
 import yaml
 
+from .fields import (
+    OptionalField,
+    YamlField,
+    get_yaml_fields_to_strip,
+)
 from .models import FilterActions, FilterCriteria, GmailFilterCollection
 
 
@@ -37,8 +42,9 @@ def _should_use_literal_block_style(text: str) -> bool:
 def serialize_filters_to_yaml(
     filter_collection: GmailFilterCollection,
     output_path: str | Path,
+    strip_fields: set[OptionalField] | None = None,
 ) -> None:
-    data = _convert_to_dict(filter_collection)
+    data = _convert_to_dict(filter_collection, strip_fields)
 
     with open(output_path, 'w') as f:
         yaml.dump(
@@ -51,26 +57,49 @@ def serialize_filters_to_yaml(
         )
 
 
-def _convert_to_dict(filter_collection: GmailFilterCollection) -> dict:
+def _convert_to_dict(
+    filter_collection: GmailFilterCollection,
+    strip_fields: set[OptionalField] | None = None,
+) -> dict:
+    yaml_fields_to_strip = get_yaml_fields_to_strip(strip_fields) if strip_fields else set()
+
+    metadata_dict = {}
+    if YamlField.METADATA_TITLE not in yaml_fields_to_strip and filter_collection.metadata.title:
+        metadata_dict['title'] = filter_collection.metadata.title
+
+    if (
+        YamlField.METADATA_AUTHOR_NAME not in yaml_fields_to_strip
+        and YamlField.METADATA_AUTHOR_EMAIL not in yaml_fields_to_strip
+        and filter_collection.metadata.author
+    ):
+        metadata_dict['author'] = {
+            'name': filter_collection.metadata.author.name,
+            'email': filter_collection.metadata.author.email,
+        }
+
+    if YamlField.METADATA_ID not in yaml_fields_to_strip and filter_collection.metadata.id:
+        metadata_dict['id'] = filter_collection.metadata.id
+
+    if (
+        YamlField.METADATA_UPDATED_TIME not in yaml_fields_to_strip
+        and filter_collection.metadata.updated_time
+    ):
+        metadata_dict['updated_time'] = filter_collection.metadata.updated_time
+
     return {
-        'metadata': {
-            'title': filter_collection.metadata.title,
-            'author': {
-                'name': filter_collection.metadata.author.name,
-                'email': filter_collection.metadata.author.email,
-            },
-            'id': filter_collection.metadata.id,
-            'updated_time': filter_collection.metadata.updated_time,
-        },
-        'filters': [_filter_to_dict(f) for f in filter_collection.filters],
+        'metadata': metadata_dict,
+        'filters': [_filter_to_dict(f, yaml_fields_to_strip) for f in filter_collection.filters],
     }
 
 
-def _filter_to_dict(filter_obj) -> dict:
-    result = {
-        'id': filter_obj.id,
-        'updated_time': filter_obj.updated_time,
-    }
+def _filter_to_dict(filter_obj, yaml_fields_to_strip: set[YamlField]) -> dict:
+    result = {}
+
+    if YamlField.FILTER_ID not in yaml_fields_to_strip and filter_obj.id:
+        result['id'] = filter_obj.id
+
+    if YamlField.FILTER_UPDATED_TIME not in yaml_fields_to_strip and filter_obj.updated_time:
+        result['updated_time'] = filter_obj.updated_time
 
     criteria_dict = _filter_criteria_to_dict(filter_obj.criteria)
     if criteria_dict:
