@@ -3,6 +3,11 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from .fields import (
+    OptionalField,
+    XmlField,
+    get_xml_fields_to_strip,
+)
 from .models import (
     Author,
     Filter,
@@ -16,7 +21,10 @@ from .models import (
 APPS_NAMESPACE = 'http://schemas.google.com/apps/2006'
 
 
-def parse_xml_to_filters(xml_path: str | Path) -> GmailFilterCollection:
+def parse_xml_to_filters(
+    xml_path: str | Path,
+    strip_fields: set[OptionalField] | None = None,
+) -> GmailFilterCollection:
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
@@ -25,12 +33,28 @@ def parse_xml_to_filters(xml_path: str | Path) -> GmailFilterCollection:
         'apps': APPS_NAMESPACE,
     }
 
-    title = _extract_text(root, 'atom:title', namespaces)
-    feed_id = _extract_text(root, 'atom:id', namespaces)
-    updated_time = _extract_text(root, 'atom:updated', namespaces)
+    xml_fields_to_strip = get_xml_fields_to_strip(strip_fields) if strip_fields else set()
+
+    title = None
+    if XmlField.METADATA_TITLE not in xml_fields_to_strip:
+        title = _extract_optional_text(root, 'atom:title', namespaces)
+
+    feed_id = None
+    if XmlField.METADATA_ID not in xml_fields_to_strip:
+        feed_id = _extract_optional_text(root, 'atom:id', namespaces)
+
+    updated_time = None
+    if XmlField.METADATA_UPDATED not in xml_fields_to_strip:
+        updated_time = _extract_optional_text(root, 'atom:updated', namespaces)
 
     author_elem = root.find('atom:author', namespaces)
-    author = _parse_author(author_elem, namespaces)
+    author = None
+    if (
+        author_elem is not None
+        and XmlField.METADATA_AUTHOR_NAME not in xml_fields_to_strip
+        and XmlField.METADATA_AUTHOR_EMAIL not in xml_fields_to_strip
+    ):
+        author = _parse_author(author_elem, namespaces)
 
     metadata = Metadata(
         title=title,
@@ -41,7 +65,7 @@ def parse_xml_to_filters(xml_path: str | Path) -> GmailFilterCollection:
 
     filters = []
     for entry in root.findall('atom:entry', namespaces):
-        filter_obj = _parse_filter_entry(entry, namespaces)
+        filter_obj = _parse_filter_entry(entry, namespaces, xml_fields_to_strip)
         filters.append(filter_obj)
 
     return GmailFilterCollection(metadata=metadata, filters=filters)
@@ -51,6 +75,13 @@ def _extract_text(element: ET.Element, path: str, namespaces: dict) -> str:
     elem = element.find(path, namespaces)
     if elem is None or elem.text is None:
         raise ValueError(f'Missing required element: {path}')
+    return elem.text
+
+
+def _extract_optional_text(element: ET.Element, path: str, namespaces: dict) -> str | None:
+    elem = element.find(path, namespaces)
+    if elem is None or elem.text is None:
+        return None
     return elem.text
 
 
@@ -64,9 +95,18 @@ def _parse_author(author_elem: ET.Element | None, namespaces: dict) -> Author:
     return Author(name=name, email=email)
 
 
-def _parse_filter_entry(entry: ET.Element, namespaces: dict) -> Filter:
-    filter_id = _extract_text(entry, 'atom:id', namespaces)
-    updated_time = _extract_text(entry, 'atom:updated', namespaces)
+def _parse_filter_entry(
+    entry: ET.Element,
+    namespaces: dict,
+    xml_fields_to_strip: set[XmlField],
+) -> Filter:
+    filter_id = None
+    if XmlField.FILTER_ID not in xml_fields_to_strip:
+        filter_id = _extract_optional_text(entry, 'atom:id', namespaces)
+
+    updated_time = None
+    if XmlField.FILTER_UPDATED not in xml_fields_to_strip:
+        updated_time = _extract_optional_text(entry, 'atom:updated', namespaces)
 
     properties = {}
     for prop in entry.findall('apps:property', namespaces):
