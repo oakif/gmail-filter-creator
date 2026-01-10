@@ -7,8 +7,8 @@ import pytest
 import yaml
 
 from gmail_filter_converter.fields import YamlFilterNameGenerationMode
-from gmail_filter_converter.xml_parser import parse_xml_to_filters
-from gmail_filter_converter.yaml_serializer import serialize_filters_to_yaml
+from gmail_filter_converter.xml_parser import parse_xml_to_filter_collection
+from gmail_filter_converter.yaml_serializer import serialize_filter_collection_to_yaml
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def temp_yaml_file():
 
 
 def test_parse_example_xml(example_xml_path: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
+    collection = parse_xml_to_filter_collection(example_xml_path)
 
     assert collection.metadata.title == 'Mail Filters'
     assert collection.metadata.author.name == 'Test User'
@@ -34,7 +34,7 @@ def test_parse_example_xml(example_xml_path: Path) -> None:
 
 
 def test_parse_filters_have_required_fields(example_xml_path: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
+    collection = parse_xml_to_filter_collection(example_xml_path)
 
     for filter_obj in collection.filters:
         assert filter_obj.id
@@ -42,7 +42,7 @@ def test_parse_filters_have_required_fields(example_xml_path: Path) -> None:
 
 
 def test_parse_first_filter_has_criteria_and_actions(example_xml_path: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
+    collection = parse_xml_to_filter_collection(example_xml_path)
     first_filter = collection.filters[0]
 
     assert first_filter.criteria.from_ == 'transactional@mail.burgerking.com'
@@ -54,7 +54,7 @@ def test_parse_first_filter_has_criteria_and_actions(example_xml_path: Path) -> 
 
 
 def test_parse_handles_quoted_values(example_xml_path: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
+    collection = parse_xml_to_filter_collection(example_xml_path)
     second_filter = collection.filters[1]
 
     assert second_filter.criteria.subject is not None
@@ -62,8 +62,8 @@ def test_parse_handles_quoted_values(example_xml_path: Path) -> None:
 
 
 def test_serialize_to_yaml(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     assert temp_yaml_file.exists()
 
@@ -75,8 +75,8 @@ def test_serialize_to_yaml(example_xml_path: Path, temp_yaml_file: Path) -> None
 
 
 def test_yaml_has_correct_structure(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         data = yaml.safe_load(f)
@@ -93,8 +93,8 @@ def test_yaml_has_correct_structure(example_xml_path: Path, temp_yaml_file: Path
 
 
 def test_yaml_has_metadata(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         data = yaml.safe_load(f)
@@ -107,8 +107,8 @@ def test_yaml_has_metadata(example_xml_path: Path, temp_yaml_file: Path) -> None
 
 
 def test_boolean_conversion_to_yaml(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         data = yaml.safe_load(f)
@@ -121,8 +121,8 @@ def test_boolean_conversion_to_yaml(example_xml_path: Path, temp_yaml_file: Path
 
 
 def test_property_name_snake_case(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         content = f.read()
@@ -136,8 +136,8 @@ def test_property_name_snake_case(example_xml_path: Path, temp_yaml_file: Path) 
 
 
 def test_round_trip_xml_to_yaml_preserves_data(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    original = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(original, temp_yaml_file)
+    original = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(original, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         data = yaml.safe_load(f)
@@ -151,8 +151,8 @@ def test_round_trip_xml_to_yaml_preserves_data(example_xml_path: Path, temp_yaml
 
 
 def test_parse_generates_names_by_default(example_xml_path: Path) -> None:
-    """Test that parse_xml_to_filters generates names by default."""
-    collection = parse_xml_to_filters(example_xml_path)
+    """Test that parse_xml_to_filter_collection generates names by default."""
+    collection = parse_xml_to_filter_collection(example_xml_path)
 
     for filter_obj in collection.filters:
         assert filter_obj.name is not None
@@ -160,8 +160,8 @@ def test_parse_generates_names_by_default(example_xml_path: Path) -> None:
 
 
 def test_parse_with_generate_names_false(example_xml_path: Path) -> None:
-    """Test that parse_xml_to_filters doesn't generate names when disabled."""
-    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+    """Test that parse_xml_to_filter_collection doesn't generate names when disabled."""
+    collection = parse_xml_to_filter_collection(example_xml_path, generate_names=False)
 
     for filter_obj in collection.filters:
         assert filter_obj.name is None
@@ -169,8 +169,8 @@ def test_parse_with_generate_names_false(example_xml_path: Path) -> None:
 
 def test_serialize_suppress_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
     """Test that SUPPRESS mode doesn't include names in YAML output."""
-    collection = parse_xml_to_filters(example_xml_path)
-    serialize_filters_to_yaml(
+    collection = parse_xml_to_filter_collection(example_xml_path)
+    serialize_filter_collection_to_yaml(
         collection,
         temp_yaml_file,
         name_mode=YamlFilterNameGenerationMode.SUPPRESS,
@@ -185,12 +185,12 @@ def test_serialize_suppress_mode(example_xml_path: Path, temp_yaml_file: Path) -
 
 def test_serialize_generate_missing_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
     """Test that GENERATE_MISSING uses existing names and generates missing ones."""
-    collection = parse_xml_to_filters(example_xml_path)
+    collection = parse_xml_to_filter_collection(example_xml_path)
 
     # Manually override the name of the first filter
     collection.filters[0].name = 'Custom Name'
 
-    serialize_filters_to_yaml(
+    serialize_filter_collection_to_yaml(
         collection,
         temp_yaml_file,
         name_mode=YamlFilterNameGenerationMode.GENERATE_MISSING,
@@ -210,12 +210,12 @@ def test_serialize_generate_missing_mode(example_xml_path: Path, temp_yaml_file:
 
 def test_serialize_regenerate_all_mode(example_xml_path: Path, temp_yaml_file: Path) -> None:
     """Test that REGENERATE_ALL overwrites existing names with generated ones."""
-    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+    collection = parse_xml_to_filter_collection(example_xml_path, generate_names=False)
 
     # Manually set a name on the first filter
     collection.filters[0].name = 'Custom Name'
 
-    serialize_filters_to_yaml(
+    serialize_filter_collection_to_yaml(
         collection,
         temp_yaml_file,
         name_mode=YamlFilterNameGenerationMode.REGENERATE_ALL,
@@ -235,11 +235,11 @@ def test_serialize_regenerate_all_mode(example_xml_path: Path, temp_yaml_file: P
 
 
 def test_default_serializer_generates_names(example_xml_path: Path, temp_yaml_file: Path) -> None:
-    """Test that serialize_filters_to_yaml generates names by default (GENERATE_MISSING)."""
-    collection = parse_xml_to_filters(example_xml_path, generate_names=False)
+    """Test that serialize_filter_collection_to_yaml generates names by default (GENERATE_MISSING)."""
+    collection = parse_xml_to_filter_collection(example_xml_path, generate_names=False)
 
     # Now serialize with default mode (GENERATE_MISSING)
-    serialize_filters_to_yaml(collection, temp_yaml_file)
+    serialize_filter_collection_to_yaml(collection, temp_yaml_file)
 
     with open(temp_yaml_file) as f:
         data = yaml.safe_load(f)

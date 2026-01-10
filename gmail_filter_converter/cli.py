@@ -9,8 +9,8 @@ from .fields import (
     OptionalField,
     YamlFilterNameGenerationMode,
 )
-from .xml_parser import parse_xml_to_filters
-from .yaml_serializer import serialize_filters_to_yaml
+from .xml_parser import parse_xml_to_filter_collection
+from .yaml_serializer import serialize_filter_collection_to_yaml
 
 
 def main() -> None:
@@ -73,10 +73,10 @@ def main() -> None:
 
     try:
         print(f'Parsing {input_path}...')
-        filter_collection = parse_xml_to_filters(input_path, strip_fields, generate_names)
+        filter_collection = parse_xml_to_filter_collection(input_path, strip_fields, generate_names)
 
         print(f'Converting to YAML and writing to {output_path}...')
-        serialize_filters_to_yaml(filter_collection, output_path, strip_fields, name_mode)
+        serialize_filter_collection_to_yaml(filter_collection, output_path, strip_fields, name_mode)
 
         print(f'Success! Converted {len(filter_collection.filters)} filters.')
     except Exception as e:

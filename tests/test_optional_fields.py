@@ -14,8 +14,8 @@ from gmail_filter_converter.fields import (
     get_xml_fields_to_strip,
     get_yaml_fields_to_strip,
 )
-from gmail_filter_converter.xml_parser import parse_xml_to_filters
-from gmail_filter_converter.yaml_serializer import serialize_filters_to_yaml
+from gmail_filter_converter.xml_parser import parse_xml_to_filter_collection
+from gmail_filter_converter.yaml_serializer import serialize_filter_collection_to_yaml
 
 
 def test_optional_field_enum_values():
@@ -116,7 +116,7 @@ def test_all_optional_fields_preset():
 
 def test_parse_xml_with_no_strip(tmp_path):
     xml_file = Path(__file__).parent / 'example_filters.xml'
-    collection = parse_xml_to_filters(xml_file)
+    collection = parse_xml_to_filter_collection(xml_file)
 
     assert collection.metadata.id is not None
     assert collection.metadata.updated_time is not None
@@ -128,7 +128,7 @@ def test_parse_xml_with_no_strip(tmp_path):
 def test_parse_xml_with_strip_metadata_ids(tmp_path):
     xml_file = Path(__file__).parent / 'example_filters.xml'
     strip_set = {OptionalField.METADATA_ID, OptionalField.FILTER_ID}
-    collection = parse_xml_to_filters(xml_file, strip_set)
+    collection = parse_xml_to_filter_collection(xml_file, strip_set)
 
     assert collection.metadata.id is None
     assert collection.metadata.updated_time is not None
@@ -139,7 +139,7 @@ def test_parse_xml_with_strip_metadata_ids(tmp_path):
 
 def test_parse_xml_with_strip_unnecessary_metadata(tmp_path):
     xml_file = Path(__file__).parent / 'example_filters.xml'
-    collection = parse_xml_to_filters(xml_file, UNNECESSARY_METADATA)
+    collection = parse_xml_to_filter_collection(xml_file, UNNECESSARY_METADATA)
 
     assert collection.metadata.id is None
     assert collection.metadata.updated_time is None
@@ -150,13 +150,13 @@ def test_parse_xml_with_strip_unnecessary_metadata(tmp_path):
 
 def test_serialize_yaml_with_no_strip():
     xml_file = Path(__file__).parent / 'example_filters.xml'
-    collection = parse_xml_to_filters(xml_file)
+    collection = parse_xml_to_filter_collection(xml_file)
 
     with NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         output_path = Path(f.name)
 
     try:
-        serialize_filters_to_yaml(collection, output_path)
+        serialize_filter_collection_to_yaml(collection, output_path)
 
         with open(output_path) as f:
             data = yaml.safe_load(f)
@@ -170,14 +170,14 @@ def test_serialize_yaml_with_no_strip():
 
 def test_serialize_yaml_with_strip_ids():
     xml_file = Path(__file__).parent / 'example_filters.xml'
-    collection = parse_xml_to_filters(xml_file)
+    collection = parse_xml_to_filter_collection(xml_file)
 
     with NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         output_path = Path(f.name)
 
     try:
         strip_set = {OptionalField.METADATA_ID, OptionalField.FILTER_ID}
-        serialize_filters_to_yaml(collection, output_path, strip_set)
+        serialize_filter_collection_to_yaml(collection, output_path, strip_set)
 
         with open(output_path) as f:
             data = yaml.safe_load(f)
@@ -191,13 +191,13 @@ def test_serialize_yaml_with_strip_ids():
 
 def test_serialize_yaml_with_strip_unnecessary_metadata():
     xml_file = Path(__file__).parent / 'example_filters.xml'
-    collection = parse_xml_to_filters(xml_file)
+    collection = parse_xml_to_filter_collection(xml_file)
 
     with NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         output_path = Path(f.name)
 
     try:
-        serialize_filters_to_yaml(collection, output_path, UNNECESSARY_METADATA)
+        serialize_filter_collection_to_yaml(collection, output_path, UNNECESSARY_METADATA)
 
         with open(output_path) as f:
             data = yaml.safe_load(f)
@@ -215,13 +215,13 @@ def test_serialize_yaml_with_strip_unnecessary_metadata():
 def test_round_trip_with_stripped_metadata():
     xml_file = Path(__file__).parent / 'example_filters.xml'
 
-    original = parse_xml_to_filters(xml_file, UNNECESSARY_METADATA)
+    original = parse_xml_to_filter_collection(xml_file, UNNECESSARY_METADATA)
 
     with NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         output_path = Path(f.name)
 
     try:
-        serialize_filters_to_yaml(original, output_path, UNNECESSARY_METADATA)
+        serialize_filter_collection_to_yaml(original, output_path, UNNECESSARY_METADATA)
 
         with open(output_path) as f:
             data = yaml.safe_load(f)
@@ -242,8 +242,8 @@ def test_round_trip_with_stripped_metadata():
 def test_backward_compatibility_unchanged_behavior():
     xml_file = Path(__file__).parent / 'example_filters.xml'
 
-    collection_default = parse_xml_to_filters(xml_file)
-    collection_explicit_none = parse_xml_to_filters(xml_file, None)
+    collection_default = parse_xml_to_filter_collection(xml_file)
+    collection_explicit_none = parse_xml_to_filter_collection(xml_file, None)
 
     assert collection_default.metadata.id == collection_explicit_none.metadata.id
     assert collection_default.metadata.updated_time == collection_explicit_none.metadata.updated_time

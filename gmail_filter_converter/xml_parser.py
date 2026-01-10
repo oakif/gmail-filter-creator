@@ -22,7 +22,7 @@ from .name_generator import generate_filter_name
 APPS_NAMESPACE = 'http://schemas.google.com/apps/2006'
 
 
-def parse_xml_to_filters(
+def parse_xml_to_filter_collection(
     xml_path: str | Path,
     strip_fields: set[OptionalField] | None = None,
     generate_names: bool = True,

@@ -41,7 +41,7 @@ def _should_use_literal_block_style(text: str) -> bool:
     return '"' in text or "'" in text
 
 
-def serialize_filters_to_yaml(
+def serialize_filter_collection_to_yaml(
     filter_collection: GmailFilterCollection,
     output_path: str | Path,
     strip_fields: set[OptionalField] | None = None,
