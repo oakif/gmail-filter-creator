@@ -12,13 +12,14 @@ class Author:
 
 @dataclass(kw_only=True)
 class Metadata:
-    title: str
-    author: Author
-    id: str
-    updated_time: str
+    title: str | None = None
+    author: Author | None = None
+    id: str | None = None
+    updated_time: str | None = None
 
     def __post_init__(self) -> None:
-        self._validate_iso8601(self.updated_time)
+        if self.updated_time:
+            self._validate_iso8601(self.updated_time)
 
     @staticmethod
     def _validate_iso8601(timestamp: str) -> None:
@@ -48,13 +49,14 @@ class FilterActions:
 
 @dataclass(kw_only=True)
 class Filter:
-    id: str
-    updated_time: str
     criteria: FilterCriteria = field(default_factory=FilterCriteria)
     actions: FilterActions = field(default_factory=FilterActions)
+    id: str | None = None
+    updated_time: str | None = None
 
     def __post_init__(self) -> None:
-        Metadata._validate_iso8601(self.updated_time)
+        if self.updated_time:
+            Metadata._validate_iso8601(self.updated_time)
         if not self._has_any_property():
             raise ValueError('Filter must have at least one criteria or action property')
 
