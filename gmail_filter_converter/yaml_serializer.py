@@ -30,6 +30,10 @@ def _literal_string_representer(dumper: yaml.Dumper, data: _LiteralBlockString) 
 yaml.add_representer(_LiteralBlockString, _literal_string_representer)
 
 
+def _should_use_literal_block_style(text: str) -> bool:
+    return '"' in text or "'" in text
+
+
 def serialize_filters_to_yaml(
     filter_collection: GmailFilterCollection,
     output_path: str | Path,
@@ -43,6 +47,7 @@ def serialize_filters_to_yaml(
             default_flow_style=False,
             sort_keys=False,
             allow_unicode=True,
+            default_style=None,
         )
 
 
@@ -85,9 +90,15 @@ def _filter_criteria_to_dict(criteria: FilterCriteria) -> dict:
     if criteria.to is not None:
         result['to'] = criteria.to
     if criteria.subject is not None:
-        result['subject'] = criteria.subject
+        if _should_use_literal_block_style(criteria.subject):
+            result['subject'] = _LiteralBlockString(criteria.subject)
+        else:
+            result['subject'] = criteria.subject
     if criteria.has_the_word is not None:
-        result['has_the_word'] = _LiteralBlockString(criteria.has_the_word)
+        if _should_use_literal_block_style(criteria.has_the_word):
+            result['has_the_word'] = _LiteralBlockString(criteria.has_the_word)
+        else:
+            result['has_the_word'] = criteria.has_the_word
     return result
 
 
