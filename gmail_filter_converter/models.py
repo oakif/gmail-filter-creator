@@ -88,3 +88,15 @@ class Filter:
 class GmailFilterCollection:
     metadata: Metadata
     filters: list[Filter] = field(default_factory=list)
+
+
+@dataclass(kw_only=True)
+class FilterGroup:
+    name: str
+    filters: list[Filter] = field(default_factory=list)
+
+
+@dataclass(kw_only=True)
+class GroupedFilterCollection:
+    metadata: Metadata
+    groups: list[FilterGroup] = field(default_factory=list)

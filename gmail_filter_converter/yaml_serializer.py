@@ -14,7 +14,7 @@ from .models import Filter, FilterActions, FilterCriteria, GmailFilterCollection
 from .name_generator import generate_filter_name
 
 
-class _LiteralBlockString(str):
+class LiteralBlockString(str):
     """Mark strings to be rendered with literal block style (|) in YAML.
 
     This produces cleaner YAML output for strings with quotes and special chars.
@@ -23,7 +23,7 @@ class _LiteralBlockString(str):
     pass
 
 
-def _literal_string_representer(dumper: yaml.Dumper, data: _LiteralBlockString) -> yaml.Node:
+def literal_string_representer(dumper: yaml.Dumper, data: LiteralBlockString) -> yaml.Node:
     """Tell PyYAML to use literal block style (|) for our marked strings.
 
     Literal block style preserves newlines and quotes without escaping.
@@ -34,10 +34,10 @@ def _literal_string_representer(dumper: yaml.Dumper, data: _LiteralBlockString) 
     return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
 
 
-yaml.add_representer(_LiteralBlockString, _literal_string_representer)
+yaml.add_representer(LiteralBlockString, literal_string_representer)
 
 
-def _should_use_literal_block_style(text: str) -> bool:
+def should_use_literal_block_style(text: str) -> bool:
     return '"' in text or "'" in text
 
 
@@ -47,7 +47,7 @@ def serialize_filter_collection_to_yaml(
     strip_fields: set[OptionalField] | None = None,
     name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
 ) -> None:
-    data = _convert_to_dict(filter_collection, strip_fields, name_mode)
+    data = convert_to_dict(filter_collection, strip_fields, name_mode)
 
     with open(output_path, 'w') as f:
         yaml.dump(
@@ -60,7 +60,7 @@ def serialize_filter_collection_to_yaml(
         )
 
 
-def _convert_to_dict(
+def convert_to_dict(
     filter_collection: GmailFilterCollection,
     strip_fields: set[OptionalField] | None = None,
     name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
@@ -92,11 +92,11 @@ def _convert_to_dict(
 
     return {
         'metadata': metadata_dict,
-        'filters': [_filter_to_dict(f, yaml_fields_to_strip, name_mode) for f in filter_collection.filters],
+        'filters': [filter_to_dict(f, yaml_fields_to_strip, name_mode) for f in filter_collection.filters],
     }
 
 
-def _filter_to_dict(
+def filter_to_dict(
     filter_obj: Filter,
     yaml_fields_to_strip: set[YamlField],
     name_mode: YamlFilterNameGenerationMode = YamlFilterNameGenerationMode.GENERATE_MISSING,
@@ -121,37 +121,37 @@ def _filter_to_dict(
     if YamlField.FILTER_UPDATED_TIME not in yaml_fields_to_strip and filter_obj.updated_time:
         result['updated_time'] = filter_obj.updated_time
 
-    criteria_dict = _filter_criteria_to_dict(filter_obj.criteria)
+    criteria_dict = filter_criteria_to_dict(filter_obj.criteria)
     if criteria_dict:
         result['criteria'] = criteria_dict
 
-    actions_dict = _filter_actions_to_dict(filter_obj.actions)
+    actions_dict = filter_actions_to_dict(filter_obj.actions)
     if actions_dict:
         result['actions'] = actions_dict
 
     return result
 
 
-def _filter_criteria_to_dict(criteria: FilterCriteria) -> dict:
+def filter_criteria_to_dict(criteria: FilterCriteria) -> dict:
     result = {}
     if criteria.from_ is not None:
         result['from'] = criteria.from_
     if criteria.to is not None:
         result['to'] = criteria.to
     if criteria.subject is not None:
-        if _should_use_literal_block_style(criteria.subject):
-            result['subject'] = _LiteralBlockString(criteria.subject)
+        if should_use_literal_block_style(criteria.subject):
+            result['subject'] = LiteralBlockString(criteria.subject)
         else:
             result['subject'] = criteria.subject
     if criteria.has_the_word is not None:
-        if _should_use_literal_block_style(criteria.has_the_word):
-            result['has_the_word'] = _LiteralBlockString(criteria.has_the_word)
+        if should_use_literal_block_style(criteria.has_the_word):
+            result['has_the_word'] = LiteralBlockString(criteria.has_the_word)
         else:
             result['has_the_word'] = criteria.has_the_word
     return result
 
 
-def _filter_actions_to_dict(actions: FilterActions) -> dict:
+def filter_actions_to_dict(actions: FilterActions) -> dict:
     result = {}
     if actions.label is not None:
         result['label'] = actions.label
